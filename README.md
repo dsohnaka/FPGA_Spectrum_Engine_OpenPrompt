@@ -120,9 +120,9 @@ This is a living repository. Layers 1, 2, and 3 will accumulate over time as the
 
 ## Adopting Open Prompt for your own project / あなた自身のプロジェクトでオープンプロンプトを採用する
 
-If you wish to release your own engineering project under Open Prompt, you are welcome to use the structure of this repository as a template. The adoption procedure is described in [Build Log #4](https://hackaday.io/) *(URL to be added)* and summarized in `LICENSE_OpenPrompt.md`.
+If you wish to release your own engineering project under Open Prompt, you are welcome to use the structure of this repository as a template. The adoption procedure is described in [Build Log #4](https://hackaday.io/project/205582-fpga-spectrum-engine/log/247479-open-prompt-a-knowledge-sharing-paradigm-for-the-llm-era)  and summarized in `LICENSE_OpenPrompt.md`.
 
-ご自身の工学プロジェクトをオープンプロンプトとして公開したい場合、このリポジトリの構造をテンプレートとして利用できます。採用手順は [Build Log #4](https://hackaday.io/) *(URL追加予定)* で説明され、`LICENSE_OpenPrompt.md` で要約されています。
+ご自身の工学プロジェクトをオープンプロンプトとして公開したい場合、このリポジトリの構造をテンプレートとして利用できます。採用手順は [Build Log #4](https://hackaday.io/project/205582-fpga-spectrum-engine/log/247479-open-prompt-a-knowledge-sharing-paradigm-for-the-llm-era)  で説明され、`LICENSE_OpenPrompt.md` で要約されています。
 
 ---
 
