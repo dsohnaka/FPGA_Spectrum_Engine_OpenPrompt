@@ -14,9 +14,9 @@ This is not a conventional open-source repository. It is structured as an **Open
 
 これは従来のオープンソースリポジトリではない。**オープンプロンプト**配布として構造化されている——アーキテクチャ知識と推論軌跡を共有財産に置き、サンプル実装は例示的なリファレンスポイントとして公開する3層構造。
 
-For the full Open Prompt declaration, see [Build Log #4 on Hackaday.io](https://hackaday.io/) *(URL to be added upon publication)*.
+For the full Open Prompt declaration, see [Build Log #4 on Hackaday.io](https://hackaday.io/project/205582-fpga-spectrum-engine/log/247479-open-prompt-a-knowledge-sharing-paradigm-for-the-llm-era) *(URL to be added upon publication)*.
 
-完全なオープンプロンプト宣言については、[Hackaday.io の Build Log #4](https://hackaday.io/) を参照してください *(公開時にURL追加予定)*。
+完全なオープンプロンプト宣言については、[Hackaday.io の Build Log #4](https://hackaday.io/project/205582-fpga-spectrum-engine/log/247479-open-prompt-a-knowledge-sharing-paradigm-for-the-llm-era) を参照してください *(公開時にURL追加予定)*。
 
 ---
 
