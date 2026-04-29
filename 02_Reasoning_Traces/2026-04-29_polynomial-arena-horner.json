@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "title": "Polynomial Evaluation Arena — Coefficient Pre-calculation and Horner's Method",
+    "title_ja": "多項式評価アリーナ — 係数の事前計算とHorner法",
+    "date": "2026-04-29",
+    "participants": [
+      {
+        "name": "Tsuneo Ohnaka",
+        "role": "FPGA Architect (40+ years)"
+      },
+      {
+        "name": "Gemini",
+        "role": "AI collaborator"
+      }
+    ],
+    "topic": "Coefficient pre-calculation and Horner's method optimization",
+    "topic_ja": "係数の事前計算とHorner法の最適化"
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "role": "user",
+      "speaker": "Tsuneo Ohnaka",
+      "content_summary_en": "Proposed absorbing the constant 2π into the polynomial coefficients at compile time, and computing the squared phase (ft)^2 once to reuse across degrees.",
+      "content_summary_ja": "定数2πをコンパイル時に多項式の係数に吸収させ、さらに位相の二乗(ft)^2を一度計算して各次数で再利用することを提案した。"
+    },
+    {
+      "turn": 2,
+      "role": "assistant",
+      "speaker": "Gemini",
+      "content_summary_en": "Validated the proposition. Formulated the equation using Horner's method where X = phi^2, proving that this structure perfectly maps to the MAC (Multiply-Accumulate) units of FPGA DSP blocks.",
+      "content_summary_ja": "提案の正当性を検証。X = phi^2 を用いたHorner法の数式を構築し、この構造がFPGAのDSPブロックのMAC（乗算累算）ユニットに完璧にマッピングされることを証明した。"
+    }
+  ],
+  "resumption_hooks": [
+    {
+      "hook_id": "A1",
+      "description_en": "Now that the Horner pipeline is established, how do we implement the adaptive degree switching (9, 11, 15) without breaking the pipeline latency?",
+      "description_ja": "Hornerパイプラインが確立された今、パイプラインのレイテンシを壊さずに適応的次数切り替え（9次、11次、15次）をどのように実装するか？"
+    }
+  ]
+}
