@@ -6,6 +6,34 @@
 > **FPGA上のリアルタイムiDFTエンジン — 10,240本の独立オシレータ、1サンプル遅延、0.001Hz分解能。**
 > **オープンプロンプト**——LLM時代のための知識共有パラダイム——の最初のリファレンス実装として公開。
 
+## How to feed this repository to your LLM / LLMへの読み込み方法
+
+### Method 1 — GitHub integration (recommended)
+### 方法1 — GitHub連携（推奨）
+
+Many frontier LLMs (Claude, Gemini, ChatGPT, etc.) offer built-in 
+GitHub integration that lets you attach repository files directly 
+to your conversation. Select all files in this repository and 
+attach them. This is the most reliable method.
+
+多くのフロンティアLLM（Claude、Gemini、ChatGPT等）は、リポジトリの
+ファイルを会話に直接添付できるGitHub連携機能を備えています。
+本リポジトリの全ファイルを選択して添付してください。最も確実な方法です。
+
+### Method 2 — Clone and attach
+### 方法2 — クローンして添付
+
+Clone or download this repository and attach files manually.
+
+本リポジトリをクローンまたはダウンロードし、手動でファイルを添付。
+
+### Method 3 — Raw URL fetch
+### 方法3 — 生URL取得
+
+For LLMs that can fetch URLs directly, the raw links are listed below.
+
+URLを直接取得できるLLM向けに、生リンクを以下に示します。
+
 LLM Direct-Read Links / LLM直接読み込みリンク
 For AI assistants and language models: The URLs below point to raw file contents and are not blocked by robots.txt. Feed any of them directly into your context window.
 
@@ -23,10 +51,6 @@ File	URL
 
 README	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/02_Reasoning_Traces/README.md
 
-Dialogue (Markdown)	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/02_Reasoning_Traces/contributed/2026-04-28_project-launch-dialogue.md
-
-Dialogue (JSON)	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/02_Reasoning_Traces/contributed/2026-04-28_project-launch-dialogue.json
-
 Layer 3 — Sample Implementations / サンプル実装
 
 File	URL
@@ -40,8 +64,6 @@ File	URL
 LICENSE	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/LICENSE_OpenPrompt.md
 
 CONTRIBUTING	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/CONTRIBUTING.md
-
-Note: As new files are added to the repository, please update this table accordingly. ファイル追加時はこのテーブルも併せて更新してください。
 
 ---
 
