@@ -39,14 +39,49 @@ A reader who replays one of these dialogues with their own language model collab
 
 ### Original author traces / オリジナル著者の軌跡
 
-| File | Date | Topic | Participants |
-|---|---|---|---|
-| `2026-04-28_project-launch-dialogue.md` <br> `2026-04-28_project-launch-dialogue.json` | 2026-04-28 | Hackaday.io project launch, Build Log strategy, Open Prompt formalization | Tsuneo Ohnaka × Claude (Anthropic) |
+| File | Date | Topic | Participants | Type |
+|---|---|---|---|---|
+| `2026-04-28_project-launch-dialogue.md/.json` | 2026-04-28 | Hackaday.io project launch, Build Log strategy, Open Prompt formalization, three-layer structure, repository establishment | Tsuneo Ohnaka × Claude (Anthropic) | Single-AI / inaugural |
+| `2026-04-29_polynomial-arena-horner.md/.json` | 2026-04-29 | Coefficient pre-calculation: absorbing 2π into polynomial coefficients; reusing φ² across degrees; mapping Horner steps onto DSP block MAC architecture | Tsuneo Ohnaka × Gemini (Google) | Single-AI / technical |
+| `2026-04-29_polynomial-arena-horner-tradeoff.md/.json` | 2026-04-29 | Refactored Horner equation compressing dynamic range 13× at cost of 2-clock-per-stage pipeline; **Tie Decision** leaving both options in the Implementation Arena | Tsuneo Ohnaka × Gemini (Google) | Single-AI / tie-decision |
+| `2026-04-29_repository-validation-and-arena.md/.json` | 2026-04-29 | Day-summary trace: ClaudeCode independent validation of the inaugural repository; the polynomial arena dialogues with Gemini; codification of Tie Decision Pattern; recognition of Multi-AI Layer 2 as a contribution type | Tsuneo Ohnaka × Claude × ClaudeCode × Gemini | **Multi-AI / inaugural multi-AI trace** |
 
 ### Contributed traces / 貢献された軌跡
 
 *Place your contributed traces in the `contributed/[your-name]/` subdirectory. See the root `CONTRIBUTING.md` for the contribution procedure.*
 *貢献された軌跡は `contributed/[あなたの名前]/` サブディレクトリに置いてください。貢献手順についてはルートの `CONTRIBUTING.md` を参照。*
+
+---
+
+## Trace types / 軌跡のタイプ
+
+The repository now contains examples of three distinct Layer 2 trace patterns. Future contributors are encouraged to use whichever pattern best suits their dialogue.
+
+リポジトリは現在、3つの異なる Layer 2 軌跡パターンの例を含んでいます。将来の貢献者は、対話に最も適したパターンを使用することを推奨されます。
+
+### Pattern 1 — Inaugural / Foundational dialogue / 礎となる対話
+
+A long-form dialogue that establishes a major part of the project's foundation (architecture, methodology, or both). Usually single-AI. Inaugural traces tend to be longer (20+ turns) and address multiple themes.
+
+プロジェクトの基礎の主要部分（アーキテクチャ、方法論、またはその両方）を確立する長文対話。通常は単一AI。礎となる軌跡はより長くなる傾向（20ターン以上）で、複数のテーマを扱う。
+
+*Example: `2026-04-28_project-launch-dialogue` — established Open Prompt's three-layer structure.*
+
+### Pattern 2 — Technical / Single-decision dialogue / 技術的・単一決定対話
+
+A focused dialogue resolving one technical question. Short (3-5 turns), highly specific, often containing a worked example or equation refactoring.
+
+一つの技術的問いを解決する集中対話。短く（3〜5ターン）、極めて具体的で、しばしば具体例または方程式変形を含む。
+
+*Examples: `2026-04-29_polynomial-arena-horner` (coefficient pre-calc) and `2026-04-29_polynomial-arena-horner-tradeoff` (the tie-decision).*
+
+### Pattern 3 — Multi-AI dialogue / 複数AI対話
+
+A dialogue involving more than one language model, typically with the human architect orchestrating different AIs for different sub-tasks based on each AI's strengths. Metadata distinguishes each AI's role explicitly.
+
+複数の言語モデルを含む対話、典型的には人間アーキテクトが各 AI の強みに基づいて異なる AI を異なる部分タスクのために調整する。メタデータが各 AI の役割を明示的に区別する。
+
+*Example: `2026-04-29_repository-validation-and-arena` — Claude (strategy) × ClaudeCode (validation) × Gemini (numerics).*
 
 ---
 
@@ -64,6 +99,12 @@ A reader who replays one of these dialogues with their own language model collab
 3. これで LLM は、対話終了時にオリジナル参加者が持っていたのと同じコンテクストを持つ
 4. 自身の質問、明確化、拡張で対話を継続する
 
+### Easier still — GitHub integration / さらに簡単に — GitHub連携
+
+Most frontier LLMs (Claude, ClaudeCode, Gemini, ChatGPT) now support GitHub integration that lets you attach repository files directly to the conversation. You can attach all of `02_Reasoning_Traces/` plus the relevant Layer 1 documents in one operation. This is verified to work — see the `2026-04-29_repository-validation-and-arena` trace, where ClaudeCode read this repository through GitHub integration with no shared context with the inaugural Claude conversation, and produced substantive interpretive observations.
+
+ほとんどのフロンティア LLM（Claude、ClaudeCode、Gemini、ChatGPT）は現在、リポジトリファイルを会話に直接添付できる GitHub 統合をサポートしている。`02_Reasoning_Traces/` のすべてと関連する Layer 1 文書を一度に添付できる。これは動作確認済み——`2026-04-29_repository-validation-and-arena` 軌跡を参照、そこでは ClaudeCode が最初の Claude 会話との共有コンテキストなしに GitHub 統合経由でこのリポジトリを読み、実質的解釈的観察を生み出した。
+
 ### Without a language model / 言語モデルなしの場合
 
 The `.md` versions are written to be readable as standalone documents. You can read them as you would read any technical document, treating them as detailed records of design reasoning.
@@ -74,13 +115,13 @@ The `.md` versions are written to be readable as standalone documents. You can r
 
 ## A note on AI participation / AI 参加についての注
 
-The original author traces in this repository feature collaboration between a human engineer (Tsuneo Ohnaka) and a language model (Claude, by Anthropic). This is not a hidden detail; it is the explicit point of the Layer 2 paradigm.
+The traces in this repository feature collaboration between a human engineer (Tsuneo Ohnaka) and multiple language models (Claude, ClaudeCode by Anthropic; Gemini by Google). This is not a hidden detail; it is the explicit point of the Layer 2 paradigm.
 
-このリポジトリのオリジナル著者軌跡は、人間エンジニア（大中恒夫）と言語モデル（Anthropic 社製 Claude）の協働を特徴とする。これは隠された詳細ではない；第2層パラダイムの明示的な要点である。
+このリポジトリの軌跡は、人間エンジニア（大中恒夫）と複数の言語モデル（Anthropic 社製 Claude と ClaudeCode；Google 社製 Gemini）との協働を特徴とする。これは隠された詳細ではない；第2層パラダイムの明示的な要点である。
 
-The reasoning shown in these traces is real reasoning — the kind that produced the Build Logs, the architectural decisions, and the Open Prompt declaration itself. **The dialogues are not transcripts of a brainstorm; they are the actual decision-making process.**
+The reasoning shown in these traces is real reasoning — the kind that produced the Build Logs, the architectural decisions, the Open Prompt declaration itself, the Tie Decision Pattern, and the Multi-AI Layer 2 format. **The dialogues are not transcripts of a brainstorm; they are the actual decision-making process.**
 
-これらの軌跡に示される推論は実際の推論である——Build Log、アーキテクチャ的決定、そしてオープンプロンプト宣言そのものを生み出した類のもの。**これらの対話はブレインストーミングの記録ではない；実際の意思決定過程である。**
+これらの軌跡に示される推論は実際の推論である——Build Log、アーキテクチャ的決定、オープンプロンプト宣言そのもの、引き分け判断パターン、そして複数AI Layer 2 形式を生み出した類のもの。**これらの対話はブレインストーミングの記録ではない；実際の意思決定過程である。**
 
 Future engineers regenerating from this archive may collaborate with whatever language model they choose. The reasoning patterns in these traces are reusable across model providers and across time.
 
@@ -90,6 +131,10 @@ Future engineers regenerating from this archive may collaborate with whatever la
 
 ## How to contribute / 貢献の方法
 
-See the root-level `CONTRIBUTING.md`. Layer 2 contributions are placed in `contributed/[your-name]/` and released as CC0 by submission. Your authorship is preserved in the file metadata.
+See the root-level `CONTRIBUTING.md`. The CONTRIBUTING document includes a Layer 2 quality guide with worked examples covering: the `decision_points` discipline, the Tie Convention, resumption hooks, multi-AI dialogue format, and common pitfalls to avoid.
 
-ルートの `CONTRIBUTING.md` を参照。第2層への貢献は `contributed/[あなたの名前]/` に置かれ、提出により CC0 で公開される。あなたの著者性はファイルメタデータに保持される。
+ルートの `CONTRIBUTING.md` を参照。CONTRIBUTING 文書は、`decision_points` の作法、引き分け作法、再開フック、複数AI対話フォーマット、避けるべき一般的な落とし穴をカバーする具体例付きの Layer 2 品質ガイドを含む。
+
+Layer 2 contributions are placed in `contributed/[your-name]/` and released as CC0 by submission. Your authorship is preserved in the file metadata.
+
+第2層への貢献は `contributed/[あなたの名前]/` に置かれ、提出により CC0 で公開される。あなたの著者性はファイルメタデータに保持される。
