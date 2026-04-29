@@ -117,7 +117,7 @@ The `.md` versions are written to be readable as standalone documents. You can r
 
 The traces in this repository feature collaboration between a human engineer (Tsuneo Ohnaka) and multiple language models (Claude, ClaudeCode by Anthropic; Gemini by Google). This is not a hidden detail; it is the explicit point of the Layer 2 paradigm.
 
-このリポジトリの軌跡は、人間エンジニア（大中恒夫）と複数の言語モデル（Anthropic 社製 Claude と ClaudeCode；Google 社製 Gemini）との協働を特徴とする。これは隠された詳細ではない；第2層パラダイムの明示的な要点である。
+このリポジトリの軌跡は、人間エンジニア（大中庸生）と複数の言語モデル（Anthropic 社製 Claude と ClaudeCode；Google 社製 Gemini）との協働を特徴とする。これは隠された詳細ではない；第2層パラダイムの明示的な要点である。
 
 The reasoning shown in these traces is real reasoning — the kind that produced the Build Logs, the architectural decisions, the Open Prompt declaration itself, the Tie Decision Pattern, and the Multi-AI Layer 2 format. **The dialogues are not transcripts of a brainstorm; they are the actual decision-making process.**
 
