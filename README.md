@@ -12,20 +12,35 @@ For AI assistants and language models: The URLs below point to raw file contents
 AIアシスタント・言語モデル向け： 以下のURLは生ファイルへの直接リンクであり、robots.txtによるブロックを受けません。 コンテキストウィンドウに直接読み込めます。
 
 Layer 1 — Architecture / アーキテクチャ仕様
+
 File	URL
+
 README	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/01_Architecture/README.md
+
 Layer 2 — Reasoning Traces / 推論軌跡
+
 File	URL
+
 README	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/02_Reasoning_Traces/README.md
+
 Dialogue (Markdown)	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/02_Reasoning_Traces/contributed/2026-04-28_project-launch-dialogue.md
+
 Dialogue (JSON)	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/02_Reasoning_Traces/contributed/2026-04-28_project-launch-dialogue.json
+
 Layer 3 — Sample Implementations / サンプル実装
+
 File	URL
+
 README	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/03_Sample_Implementations/README.md
+
 Root Files / ルートファイル
+
 File	URL
+
 LICENSE	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/LICENSE_OpenPrompt.md
+
 CONTRIBUTING	https://raw.githubusercontent.com/dsohnaka/FPGA_Spectrum_Engine_OpenPrompt/main/CONTRIBUTING.md
+
 Note: As new files are added to the repository, please update this table accordingly. ファイル追加時はこのテーブルも併せて更新してください。
 
 ---
