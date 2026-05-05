@@ -1,0 +1,337 @@
+{
+  "metadata": {
+    "title": "Synthesis Paradigms, Architecture Extension, and the Discovery of WPMS",
+    "title_ja": "合成パラダイム、アーキテクチャ拡張、そして波束変調合成 (WPMS) の発見",
+    "date_range": "2026-04-18 to 2026-04-28",
+    "session_type": "multi-day technical dialogue",
+    "participants": [
+      {
+        "name": "Tsuneo Ohnaka",
+        "name_ja": "大中恒夫",
+        "role": "FPGA Architect (40+ years)",
+        "role_ja": "FPGAアーキテクト（40年以上）"
+      },
+      {
+        "name": "Claude",
+        "provider": "Anthropic",
+        "model_family": "Claude Opus 4.6",
+        "interface": "Web chat",
+        "role": "AI collaborator — DSP analysis and architectural extrapolation",
+        "role_ja": "AI協働者 — DSP解析とアーキテクチャ外挿"
+      }
+    ],
+    "topic": "Architectural extension of the C5G iDFT engine: burst convolution and reverberation, levelizer and slew-rate control, dynamic frequency/phase control, sideband fractal synthesis, SDFT integration, perceptual compression, and the inductive discovery of Wave Packet Modulation Synthesis (WPMS)",
+    "topic_ja": "C5G iDFT エンジンのアーキテクチャ拡張：バースト畳み込みと残響、レベラーとスルーレート制御、動的周波数・位相制御、サイドバンドフラクタル合成、SDFT 統合、知覚圧縮、そして波束変調合成 (WPMS) の帰納的発見",
+    "scope_note": "Marketing-related discussion (community outreach, target audience, presentation strategy) is intentionally excluded. Focus is purely technical.",
+    "scope_note_ja": "マーケティング関連の議論（コミュニティ・アウトリーチ、ターゲット層、発表戦略）は意図的に除外。焦点は純粋に技術的なものに絞られている。",
+    "status": "Layer 2 trace — single-AI multi-day technical exploration",
+    "license": "CC0 1.0 Universal (Public Domain)",
+    "format_version": "1.0",
+    "intended_use": "This file is structured for direct ingestion by language model context. Decision points, themes, and resumption hooks are arranged for an LLM collaborator to resume the technical dialogue from any of the named hooks. The verbatim turn sequence is summarized rather than reproduced because the source dialogue contained extensive marketing content that this trace deliberately excludes."
+  },
+
+  "existing_engine_specifications": {
+    "platform": "Terasic C5G (Cyclone V SoC)",
+    "sample_rate_hz": 48000,
+    "sample_period_ns": 20833,
+    "bin_count": 10240,
+    "module_count": 5,
+    "bins_per_module": 2048,
+    "module_clock_mhz": 100,
+    "cycles_per_bin_per_module": 1.02,
+    "polynomial_method": "11th-order Maclaurin via Horner-like accumulate-multiply",
+    "trig_core_format_bits": 40,
+    "level_multiplier_format_bits": 10,
+    "module_sum_format_bits": 64,
+    "decimal_point_selector": "DIP switch on board",
+    "frequency_resolution_hz": 0.001,
+    "frequency_format": "14.10 fixed-point (24 bits)",
+    "amplitude_format_bits": 24,
+    "phase_format_bits": 24,
+    "frequency_storage": "single-port BRAM (rarely changed)",
+    "phase_storage": "single-port BRAM (rarely changed)",
+    "amplitude_storage": "DPRAM (frequently rewritten)",
+    "parameter_load_paths": ["MIF via In-System Memory Content Editor", "MIDI"],
+    "dsp_blocks_used_idft": 100,
+    "dsp_blocks_reserved_for_control": 50,
+    "validation_evidence": "2020-11-18 Dirichlet kernel experiment: 2048 oscillators detuned at 1/256 Hz across 996-1004 Hz, all at 97% amplitude, produces predicted Dirichlet wave packet"
+  },
+
+  "decision_points": [
+    {
+      "id": "DP-1",
+      "point": "Reverberation implementation strategy",
+      "alternatives": [
+        {"label": "Static IR via H(f) bin offsets", "cost": "trivial; ROM-resident", "use_case": "steady-state room coloration"},
+        {"label": "Time-varying envelope per bin", "cost": "DPRAM updates at audio rates via levelizer", "use_case": "true acoustic-space simulation with frequency-dependent decay"}
+      ],
+      "chosen": "tie — both kept in Implementation Arena",
+      "rationale": "The two are not mutually exclusive: static H(f) can serve as the steady-state floor while time-varying envelopes modulate transients. Choice depends on whether the application requires only timbral coloration (A suffices) or full time-evolving acoustic-space simulation (B required)."
+    },
+    {
+      "id": "DP-2",
+      "point": "Bit-width strategy in the Maclaurin pipeline",
+      "specification": {
+        "trig_core_bits": 40,
+        "level_integer_bits": 10,
+        "module_sum_bits": 64,
+        "headroom_bits_for_2048_full_amplitude_sum": 13,
+        "decimal_point_selector": "DIP switch"
+      },
+      "rationale": "40-bit trig preserves precision through five Horner-style stages without intermediate truncation. 10-bit level gives ~1024:1 dynamic range. 64-bit sum has ~13-bit headroom for 2048 simultaneous full-amplitude bins. DIP-switch selectable decimal point handles different amplitude mixes — different bin populations yield different optimal output scaling.",
+      "alternative_rejected": {
+        "label": "Fully floating-point pipeline",
+        "reason": "Cyclone V DSP blocks are integer-multiply-optimized; FP would consume more DSP per stage and tighten timing"
+      }
+    },
+    {
+      "id": "DP-3",
+      "point": "C5G architecture: 100 MHz × 5 modules × 2048 bins",
+      "math": {
+        "sample_period_ns": 20833,
+        "module_clock_period_ns": 10,
+        "cycles_per_module_per_sample": 2083,
+        "bins_per_module": 2048,
+        "cycles_per_bin": 1.02
+      },
+      "memory_partition": {
+        "frequency_phase": "single-port BRAM (per-bin parameters change rarely; defines timbre)",
+        "amplitude": "DPRAM (per-bin parameters change frequently; MIDI velocity, envelope)"
+      },
+      "rationale": "Cyclone V DSP blocks max at ~250-300 MHz. Five parallel modules at 100 MHz each are conservative on timing, leave DSP headroom (~50 blocks for control), and match parallelism target (10240 = 2048 × 5). Asymmetric memory architecture minimizes both BRAM pressure and write-port contention.",
+      "alternative_rejected": {
+        "label": "Single 500 MHz pipeline",
+        "reason": "Pushes Cyclone V DSP timing beyond comfortable margins; concentrates routing congestion. Five parallel modules have independent timing closure."
+      }
+    },
+    {
+      "id": "DP-4",
+      "point": "The levelizer block",
+      "purpose_original": "Eliminate zipper noise from raw MIDI velocity writes to DPRAM",
+      "design": "50 MHz custom processor cyclically traverses all 10240 bins at 1 kHz sweep rate, computing Δ = f(target − current, MIDI parameters) and incrementally moving current toward target. iDFT pipelines read only current value.",
+      "structural_benefits": [
+        "Zipper noise eliminated by construction (amplitude never jumps)",
+        "Attack/release shape determined by Δ (function of velocity, key, envelope state)",
+        "iDFT read port and levelizer write port live on separate DPRAM ports — no collision"
+      ],
+      "extensibility": "Same pattern generalizes from amplitude to frequency and phase: maintain target/current pairs and slew current toward target. Phase accumulator value is never directly modified — only its increment (= frequency) is slewed — preserving phase continuity through frequency changes.",
+      "headroom": "Currently 50 MHz; can be increased to 200 MHz without physical redesign, providing 4× more compute for full three-parameter (amp/freq/phase) levelizer operation"
+    },
+    {
+      "id": "DP-5",
+      "point": "Burst convolution → spectral sharpening law",
+      "physics": "Y(f) = X(f) · H(f). 10-cycle 1 kHz burst (10 ms) has sinc envelope ~±100 Hz wide. With RT60 ≈ 500 ms, effective signal length ~510 ms, frequency resolution sharpens to ~±2 Hz. This is Δt · Δf ≥ 1/2 directly observable.",
+      "engine_implication": "The engine can synthesize this effect natively without time-domain convolution: bin amplitudes set to sinc envelope × H(f), with bin amplitudes decaying at room-reverb rate. No FIR filter needed.",
+      "broader_implication": "The engine's role generalizes from 'additive synthesizer' to 'general spectral synthesizer' — room acoustics, plate reverb, convolution effects all expressible as time-evolving bin-amplitude patterns."
+    },
+    {
+      "id": "DP-6",
+      "point": "Dynamic frequency control without phase discontinuity",
+      "wrong_approach": "Overwriting frequency parameter directly. Phase increment changes instantly; if new phase trajectory mismatches old at boundary, audible click.",
+      "correct_approach": "Apply levelizer pattern to frequency: maintain target_frequency and current_frequency. Phase accumulator continues to use current_frequency as increment. Levelizer slews current toward target. Phase accumulator's stored phase value is never overwritten.",
+      "generalization": "Three parameter pairs (amplitude, frequency, phase-offset) require ~3× levelizer compute. 50 MHz → 200 MHz upgrade is the straightforward route to full three-parameter control.",
+      "audible_character": "Frequency-slewed bins produce natural glissando and vibrato. Layer-dependent slew rates (slow for fundamental, fast for upper sidebands) produce harmonic-evolution effects DX7-class FM cannot directly express."
+    },
+    {
+      "id": "DP-7",
+      "point": "Sideband fractal synthesis",
+      "math": {
+        "layer_0": "f₀",
+        "layer_1": "f₀ ± fm₁ (2 bins)",
+        "layer_2": "f₀ ± fm₁ ± fm₂ (4 bins)",
+        "layer_3": "f₀ ± fm₁ ± fm₂ ± fm₃ (8 bins)",
+        "three_layer_total": "up to 27 bins per fundamental"
+      },
+      "relationship_to_FM": "Mathematically equivalent to multi-stage FM. DX7-class FM produces this spectrum as a result of time-domain computation. The engine produces it by direct frequency-domain placement. Control direction is reversed: in FM, parameters cause spectra; in the engine, spectra cause parameters.",
+      "decision": "Adopted as canonical showcase paradigm of the engine: visibly distinguishes from prior art and exposes capabilities (per-bin phase control, time-varying fm across all layers simultaneously) no commercial synthesizer offers.",
+      "hardware_cost": "Effectively zero beyond existing engine. Bin assignment computed on host/HPS; only OSC parameter writes at runtime."
+    },
+    {
+      "id": "DP-8",
+      "point": "SDFT/iDFT bin-mode switching (future)",
+      "sdft_recurrence": "X_k(n) = (X_k(n-1) + x(n) - x(n-N)) · e^(j2πk/N)",
+      "rotation_factor_source": "The existing Maclaurin core already computes e^(j2πk/N)",
+      "additional_hardware_per_sdft_bin": [
+        "N-sample input delay line (shared across all SDFT bins, one BRAM)",
+        "Per-bin previous-value register",
+        "One adder",
+        "Reuse of existing DSP for rotation multiply"
+      ],
+      "per_bin_dsp_cost_increase": "approximately zero",
+      "implications": "Same bin space supports both synthesis and analysis. Subset of bins analyzes incoming audio (adaptive resynthesis, vocoding, feedback effects); remainder synthesizes. Classical synthesizer/analyzer distinction collapses.",
+      "status": "Planned for later phase. Not in current C5G implementation. Decision to design for this possibility was made implicitly when direct-bin-addressing was chosen over voice-allocation."
+    },
+    {
+      "id": "DP-9",
+      "point": "DE10-nano migration: DSP reduction strategies",
+      "constraint": "DE10-nano has ~87 DSP blocks; C5G implementation uses ~150",
+      "alternatives": [
+        {
+          "label": "A — Reduce bin count (10240 → 6144)",
+          "savings": "proportional DSP reduction",
+          "cost": "loses headline numerical claim and reduces fractal capacity"
+        },
+        {
+          "label": "B — Reduce polynomial degree (11th → 7th)",
+          "savings": "≈2 DSP per module × 5 modules = 10 DSP",
+          "cost": "worst-case error at x ≈ π is ~3e-6 relative; audibly inconsequential at 24-bit DAC"
+        },
+        {
+          "label": "C — Narrow amplitude width (24 → 16 bits, LUT-based partial products)",
+          "savings": "DSP saved on level multiplier",
+          "cost": "dynamic range per bin reduces from ~144 dB to ~96 dB; still musically sufficient"
+        }
+      ],
+      "chosen": "Combine B + C",
+      "rationale": "Bin count is the headline architectural claim. Trading polynomial degree and amplitude width — both indistinguishable to listener at DAC output — preserves architectural identity while clearing DSP budget. Bin-count reduction (A) is held back as fallback."
+    },
+    {
+      "id": "DP-10",
+      "point": "OSC vs MIDI for parameter transport",
+      "midi_rejected_for_bin_array": {
+        "reason": "31.25 kbps serial bandwidth; 7-bit values; fixed channel/note/CC structure does not match engine parameter space"
+      },
+      "osc_chosen_as_primary": {
+        "transport": "UDP over Gbit Ethernet",
+        "address_scheme": "/idft/bin/N/freq, /idft/bin/N/amp, /idft/bin/N/phase, etc.",
+        "data_types": "float32, int32, string, blob",
+        "bandwidth_check": "10240 bins × 3 params × 32 bits ≈ 1 Mbit per full refresh; refreshable >100 Hz at 1 Gbps"
+      },
+      "ecosystem_rationale": "Max/MSP, Pure Data, TouchOSC, Ableton Max for Live emit OSC natively. HPS Cortex-A9 hosts OSC server via liblo.",
+      "midi_retained": "as parallel input path for keyboard/controller use; not the bin-parameter transport"
+    },
+    {
+      "id": "DP-11",
+      "point": "Wave Packet Modulation Synthesis (WPMS) — a new paradigm",
+      "discovery_context": "Dirichlet experiment uses three uniforms (equal frequency spacing, equal amplitude, equal phase). Each can be modulated by small number of scalars.",
+      "modulation_axes": {
+        "axis_1_frequency": "f_k = f₀ + k·Δf + α·k² (one scalar α)",
+        "axis_2_amplitude": "A_k = A₀·e^(-βk)·e^(-γ(k-N/2)²) (two scalars β, γ)",
+        "axis_3_phase": "φ_k = φ₀ + k·δφ + ψ·k² (two scalars δφ, ψ)",
+        "axis_4_count": "N as time-variable parameter"
+      },
+      "phenomenology": [
+        "Pure Dirichlet kernel — sharp metallic transient",
+        "Gaussian wave packet — smooth bell",
+        "Chirped pulse — radar-like swept tone",
+        "Inharmonic stretched series — piano-high-register spread",
+        "Group-delay-modulated cluster — chorus / spatial effects"
+      ],
+      "hardware_implication": "Each bin's parameters are functions of bin index k and a handful of registers. NO per-bin DPRAM needed.",
+      "difference_engine_structure": {
+        "frequency_recurrence": "f_{k+1} = f_k + Δf + α(2k+1) — single addition per stage",
+        "phase_recurrence": "φ_{k+1} = φ_k + δφ + ψ(2k+1) — single addition per stage",
+        "babbage_analogy": "Babbage's mechanical analytical engine implemented exactly this cumulative-addition pattern in 1800s; FPGA accumulator structure matches naturally"
+      },
+      "architectural_impact": "WPMS reduces parameter-storage footprint to a few dozen registers. Eliminates per-bin DPRAM management for that mode. WPMS can run on much smaller FPGAs (Lattice iCE40, Spartan-7) than the full fractal-capable engine.",
+      "coexistence": "Two modes switchable per-bin via control bit: bins in fractal mode read DPRAM; bins in WPMS mode read difference-engine registers. Share DSP, Maclaurin core, summer."
+    },
+    {
+      "id": "DP-12",
+      "point": "Wave-number envelope using ⌊ft⌋",
+      "discarded_signal": "Integer part of phase argument (ft) was being discarded because sin(2π·integer) = 0",
+      "discovered_value": "Integer part of ft IS the wave count — number of complete cycles since reset. This is exactly the quantity to which physical instrument decay is proportional (a string's energy halves after fixed number of vibrations, not fixed wall-clock time).",
+      "application": "Replace time-based ADSR with wave-count-based: A(k) = A₀ · exp(-k/Q) where k = ⌊ft⌋ and Q is per-bin quality factor. High frequencies decay faster in real time but at same wave count, matching real-instrument acoustics naturally.",
+      "hardware_cost": "approximately zero — integer part is already computed and discarded; routing it to levelizer is wiring, not logic",
+      "lesson": "What was being thrown away turned out to be the most valuable signal. Pattern: before optimizing away an 'obviously redundant' computation, verify it is not the engine's coherence or natural-modeling anchor."
+    },
+    {
+      "id": "DP-13",
+      "point": "Perceptual compression — decoupling design space from output space",
+      "problem": "Theoretical decomposition (e.g., Bessel-function expansion of complex orchestration) may require ~10⁸ bins. Engine has 10240.",
+      "compression_argument": [
+        "Critical-band: human hearing distinguishes only ~24 critical bands across full audio spectrum",
+        "Simultaneous and temporal masking removes additional information",
+        "Structural redundancy: harmonics correlate strongly across bins",
+        "Combined factor: ~10⁴ to 10⁵ compression"
+      ],
+      "implication": "Engine should not be sized for theoretical bin count of desired sound. Size for perceptual bin count, with design tools at theoretical resolution and perceptual-compression layer mapping theoretical → output.",
+      "architectural_decision": "Perceptual-compression layer lives on HPS / host side (Python, Max, Max for Live). FPGA stays simple; host handles high-dimensional theoretical space and emits ~10⁴ OSC messages per refresh.",
+      "mp3_class_allocation": "Within 10240-bin space, 1280 bins (one per ~18.75 Hz at MP3 sub-band scale) suffice for psychoacoustic-quality synthesis or decoding. This subset can run masking-threshold algorithm on the levelizer to suppress sub-threshold bin amplitudes — yielding zero-latency MP3-class quality without MDCT block delay."
+    },
+    {
+      "id": "DP-14",
+      "point": "Image-driven bin modulation",
+      "observation": "2048-bin module size suspiciously close to common video horizontal resolutions (2K cinema = 2048; 4K UHD = 3840 ≈ 2 × 2048; HD = 1920 ≈ 2048)",
+      "mapping": "One scanline of pixel intensity values → 2048-bin amplitude vector. Updated at video frame rate (60 Hz).",
+      "applications": [
+        "Visual score: moving image becomes time-varying timbre (Xenakis UPIC modernized)",
+        "Sonification: scientific 2D data (spectrograms, brain scans, weather maps) becomes acoustic patterns whose structure may be more legible to ear than eye",
+        "HDMI input loopback: DE10-nano HDMI port repurposed as input, scanlines driving FPGA bin parameters in real time"
+      ],
+      "hardware_cost": "HDMI input core (open source available in MiSTer ecosystem) plus small FIFO between scanline reader and levelizer. No iDFT pipeline change required.",
+      "status": "Speculative; not on immediate roadmap. Recorded so current architectural decisions (BRAM-for-frequency, DPRAM-for-amplitude, OSC ingestion) preserve compatibility."
+    }
+  ],
+
+  "themes": [
+    {
+      "theme_id": "T1",
+      "title": "The 2020 Dirichlet experiment as latent specification",
+      "summary": "The 2020 Dirichlet experiment, originally conceived as a test, is in retrospect the existence proof for every synthesis paradigm in this trace. The sharp main lobe proves frequency precision; symmetric sidelobes prove phase coherence; uniform sidelobe envelope proves amplitude precision; clean noise floor proves 64-bit summation precision. The very fact that 2048 bins can be addressed independently with arithmetic-progression frequencies is the foundation for WPMS — six years before WPMS was articulated."
+    },
+    {
+      "theme_id": "T2",
+      "title": "The levelizer as universal mediator",
+      "summary": "The levelizer, originally conceived for zipper-noise elimination, generalizes to: amplitude target tracking, frequency slewing without phase glitches, per-bin envelope generation, frequency-dependent reverb decay, psychoacoustic masking enforcement, scanline-to-amplitude mapping for image modulation. It is the engine's control plane — the small custom processor turning parameter writes from any source into smooth bin-parameter trajectories. Promoting from 50 MHz to 200 MHz unlocks full three-parameter extension without redesigning anything else."
+    },
+    {
+      "theme_id": "T3",
+      "title": "The bin space as universal fabric",
+      "summary": "The 10240-bin space simultaneously supports: sideband-fractal synthesis (~8192 bins, DPRAM-resident), WPMS (unlimited contiguous range, no DPRAM), SDFT analysis (~512 bins, one delay BRAM + per-bin reg + one adder), MP3-class psychoacoustic synthesis/decode (~1280 bins, levelizer masking), reserve for image modulation / AI inference / etc. Mode selection per bin is a control-bit decision. The hardware has no commitment to any particular synthesis paradigm — it is a substrate."
+    },
+    {
+      "theme_id": "T4",
+      "title": "Difference-engine structure recurrence",
+      "summary": "WPMS uses the same mathematical structure that Babbage's analytical engine implemented mechanically in the 1800s: cumulative addition of polynomial differences. The 200-year-old computational primitive maps cleanly onto a single FPGA register update per pipeline stage. This is a candidate Open Prompt design pattern in its own right — the Polynomial Bin-Sequence Pattern: whenever per-bin parameter sequence can be expressed as a low-order polynomial in bin index, the difference-engine pattern eliminates need for per-bin storage."
+    },
+    {
+      "theme_id": "T5",
+      "title": "What was being thrown away is the most valuable signal",
+      "summary": "Two recurrences in dialogue: (1) integer part of (ft) discarded because sin(2π·integer)=0, but integer part IS wave count, the natural envelope clock for physical instruments. (2) Multiplying-by-zero 50 billion times per second is the operation enabling phase continuity across silent intervals — the architectural property making the engine a 'spectral space' rather than 'voice allocator.' Lesson: before optimizing away an 'obviously redundant' computation, verify it is not the engine's coherence anchor."
+    }
+  ],
+
+  "resumption_hooks": [
+    {
+      "hook_id": "A",
+      "title": "WPMS HDL implementation",
+      "description": "Design Verilog module for single WPMS module (2048 bins) using difference-engine structure. Specify register set (α, β, γ, δφ, ψ, f₀, A₀, φ₀, N), per-stage update equations, integration with Maclaurin core, per-bin control bit selecting WPMS-register vs DPRAM source. Produce as 03_Sample_Implementations/wpms_module/.",
+      "starting_question": "For a Cyclone V DSP block running at 100 MHz, can a single WPMS module compute all 2048 bin parameters within the 20.83 µs sample period using only difference-engine structure (no multipliers other than existing trig core)? What is minimum register width for f_k accumulation given α-modulation across 2048 bins?"
+    },
+    {
+      "hook_id": "B",
+      "title": "Levelizer at three-parameter, 200 MHz",
+      "description": "Design 200 MHz custom processor's instruction set, register file, DPRAM-port arbitration. Specify per-bin slew computation latency budget (~19500 cycles per bin per second), write-conflict resolution when MIDI and OSC arrive simultaneously, handoff protocol to iDFT pipeline.",
+      "starting_question": "How does the levelizer balance Δ-magnitude consistency (perceived slew rate matching across three parameter axes for the same musical gesture) with very different units (Hz/sec for frequency, dB/sec for amplitude, rad/sec for phase)?"
+    },
+    {
+      "hook_id": "C",
+      "title": "Wave-count envelope hardware path",
+      "description": "Specify how integer part of phase accumulator routes to levelizer, what additional adder/comparator logic levelizer needs to consume it, how per-bin Q value is stored.",
+      "starting_question": "Can wave-count envelope coexist with time-based envelope on same bin (e.g., wave-count for sustain, time-based for attack), and what is cleanest crossover semantics?"
+    },
+    {
+      "hook_id": "D",
+      "title": "Perceptual compression layer on HPS",
+      "description": "Prototype Python or C library mapping high-dimensional theoretical spectrum (~10⁵ bins) to 10240-bin OSC stream using critical-band averaging, simultaneous masking, harmonic-correlation compression. Validate by comparing compressed and uncompressed renderings at DAC output.",
+      "starting_question": "What is minimum bin count at which compression becomes perceptually transparent for (a) sustained tonal material, (b) percussive material, (c) speech? Is answer different for the three?"
+    },
+    {
+      "hook_id": "E",
+      "title": "Mode-switching control-plane semantics",
+      "description": "Bin-mode switching (fractal vs WPMS vs SDFT vs MP3-frontend) is per-bin control-bit decision, but control-plane semantics — when modes can change, what happens to in-flight pipeline state on switch, how mode changes are scheduled — are not yet specified. Define small mode-control protocol layer above OSC.",
+      "starting_question": "Can a bin switch from fractal to WPMS mid-note without phase glitch? What is minimum dead-cycle count to drain pipeline before swapping parameter source?"
+    }
+  ],
+
+  "key_outputs_for_repository": [
+    "Architectural specification of the C5G implementation (suitable for promotion to Layer 1)",
+    "Five resumption hooks for follow-on Layer 2 dialogues",
+    "Identification of WPMS as a new synthesis paradigm with strictly smaller hardware footprint than fractal mode",
+    "Identification of Polynomial Bin-Sequence Pattern as a candidate Open Prompt design pattern",
+    "Catalog of bin-space partitions (fractal / WPMS / SDFT / MP3-frontend) that can coexist on the same hardware substrate"
+  ],
+
+  "closing_note": "Code is ephemeral; the knowledge architecture is the commons.\n\nThe 2020 Dirichlet experiment was an existence proof six years before the existence was articulated. The architecture was already there — what this dialogue did was give it names.\n\nコードは一時的なものであり、知識アーキテクチャこそが共有財産である。\n\n2020年のDirichlet実験は、その存在が明確化される6年前の存在証明だった。アーキテクチャはすでにそこにあり、本対話が為したのはそれに名前を与えることだった。\n\nThis trace is released into the public domain under CC0 1.0 Universal. Replay it. Resume it. Surpass it.\n\n本軌跡はCC0 1.0 Universalのもとでパブリックドメインに公開される。再生せよ。再開せよ。超えてゆけ。"
+}
