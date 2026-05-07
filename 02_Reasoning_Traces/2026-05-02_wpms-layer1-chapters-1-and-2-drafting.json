@@ -1,0 +1,226 @@
+{
+  "metadata": {
+    "title": "WPMS Synthesizer Layer 1 Drafting — Chapters 1 and 2",
+    "title_ja": "WPMS シンセサイザー第1層仕様起草 — 第1章および第2章",
+    "date": "2026-05-02",
+    "session_type": "single-AI multi-stage drafting dialogue",
+    "participants": [
+      {
+        "name": "Tsuneo Ohnaka",
+        "name_ja": "大中恒夫",
+        "role": "FPGA Architect (40+ years)",
+        "role_ja": "FPGAアーキテクト（40年以上）"
+      },
+      {
+        "name": "Claude",
+        "provider": "Anthropic",
+        "model_family": "Claude Opus 4.7",
+        "interface": "Web chat with project knowledge",
+        "role": "AI collaborator — architecture synthesis and specification drafting",
+        "role_ja": "AI協働者 — アーキテクチャ統合と仕様起草"
+      }
+    ],
+    "topic": "Drafting dialogue for Chapter 1 (Scope and Boundary Conditions) and Chapter 2 (Maclaurin Pipeline Specification) of the WPMS Synthesizer Layer 1 specification",
+    "topic_ja": "WPMS シンセサイザー第 1 層仕様の第 1 章（スコープと境界条件）および第 2 章（マクローリンパイプライン仕様）の起草対話",
+    "status": "Layer 2 trace — Layer 1 production",
+    "license": "CC0 1.0 Universal (Public Domain)",
+    "format_version": "1.0",
+    "direct_outputs": [
+      "WPMS_Layer1_Chapter1_Scope_and_Boundary_Conditions.md",
+      "WPMS_Layer1_Chapter2_Maclaurin_Pipeline.md"
+    ],
+    "engagement_observation": "After Chapters 1 and 2 were posted to Hackaday.io as Build Logs, page views rose from ~30/day to 80-90/day, and follower count doubled (2 → 4)."
+  },
+
+  "decision_points": [
+    {
+      "id": "DP-1",
+      "point": "WPMS as the first deliverable",
+      "alternatives": [
+        {"label": "Full Spectrum Engine (10240-bin fractal-capable, with HPS and PC integration)", "characterization": "the original architectural target"},
+        {"label": "WPMS Synthesizer (physical-layer-only, no HPS, no PC)", "characterization": "a strict subset focused on getting sound out"}
+      ],
+      "chosen": "WPMS Synthesizer",
+      "rationale_summary": "Three independent reasons converge: (1) earliest path from repository to sound; (2) components built for WPMS (Maclaurin pipeline, sequence-modulation processor, HDMI audio path, AXI input switch) are also components of the eventual full Engine — nothing throwaway; (3) WPMS is structurally simple enough to serve as the first real test of the Open Prompt regeneration loop"
+    },
+    {
+      "id": "DP-2",
+      "point": "Bin count and module configuration",
+      "alternatives": [
+        {"label": "Compact", "modules": 2, "bins": 4096, "target": "DE10-nano reference"},
+        {"label": "Standard", "modules": 5, "bins": 10240, "target": "C5G-equivalent on DE10-nano"},
+        {"label": "Extended", "modules": 10, "bins": 20480, "target": "DE25-nano"}
+      ],
+      "chosen": "tie at the Implementation Arena level; Compact selected as first reference implementation by convention not by commitment",
+      "rationale_summary": "Logically the three configurations differ only in a single `generate` parameter at compile time. However, increasing module count brings non-linear implementation pressures: routing congestion, clock-tree skew, BRAM port contention, DSP placement constraints, Fmax erosion. Each module-count threshold is a real engineering frontier; Fmax breakthroughs at one tier can unlock the next. This recursive expansion is exactly the kind of knowledge that does not survive in source code alone — it is one of the strongest reasons for Open Prompt's existence as a methodology",
+      "tie_decision_protocol_anchor": true
+    },
+    {
+      "id": "DP-3",
+      "point": "Horner variant selection (partial tie resolution)",
+      "alternatives": [
+        {"label": "Approach A — Textbook Horner", "latency": "1 clk/stage", "precision": "28-bit fractional in 36-bit datapath"},
+        {"label": "Approach B — Refactored Horner with constant absorption (Gemini-recommended)", "latency": "2 clk/stage (~80 ns overhead)", "precision": "+4 bits fractional via 13× dynamic range compression"}
+      ],
+      "chosen": "Approach B for WPMS reference implementation; tie preserved at methodology level for future variants",
+      "rationale_summary": "Audio-rate synthesis values precision over latency — 80 ns is inaudible; +4 bits is musically relevant. The 4096-bin Compact configuration leaves ample latency headroom. Future engineers regenerating for latency-critical applications may legitimately select Approach A. The methodology rule applied: a partial tie resolution does not erase the tie at the methodology level. The 2026-04-29 reasoning trace's tie remains valid; this dialogue records that WPMS chose B without claiming B is universally correct.",
+      "methodology_observation": "First worked example of partial-tie-resolution: how to record a context-specific choice without invalidating the underlying tie"
+    },
+    {
+      "id": "DP-4",
+      "point": "Phase accumulator bit width",
+      "alternatives": [
+        {"label": "A — 24 bits", "format": "Q0.24", "resolution": "~2.86 mHz", "memory": "M10K 16+8"},
+        {"label": "B — 26 bits", "format": "Q0.26", "resolution": "~0.72 mHz", "memory": "M10K 18+8"},
+        {"label": "C — 27 bits", "format": "Q0.27", "resolution": "~0.36 mHz", "memory": "M10K 18+9"},
+        {"label": "D — 32 bits", "format": "Q0.32", "resolution": "~11.2 µHz", "memory": "M10K single block"}
+      ],
+      "chosen": "D — 32 bits (Q0.32)",
+      "rationale_summary": "The C5G 24-bit choice was driven by M10K block constraints when parameters were stored in BRAM. WPMS uses register-resident phase, so that constraint does not apply. 32 bits gives: (a) M10K 1-block configuration if BRAM is later added (half the C5G consumption); (b) frequency resolution ~89× finer than the original 0.001 Hz target; (c) integer alignment with float32 OSC messages; (d) DSP 27×27 mode compatibility via truncation",
+      "architect_reflection_verbatim_ja": "今回のあなたとの協議で明らかになったのはC5G版は、使用リソースに対する性能の最適化が詰められていなかったということです。今回はそこを詰めることができたのは大きな収穫です。",
+      "architect_reflection_translation_en": "What today's discussion revealed is that the C5G version was not optimized for performance against its resource usage. Being able to nail this down today is a significant gain."
+    },
+    {
+      "id": "DP-5",
+      "point": "Internal precision policy: 'spend richly outside the core'",
+      "alternatives": [
+        {"label": "A — Whole-pipeline 27-bit ceiling", "characterization": "simplest DSP accounting, smallest resource use, but reduces sin(x) output precision and summation precision"},
+        {"label": "B — Constraint applies only to Maclaurin core internal", "characterization": "outside the core, precision preserved at maximum; Q0.40 sin output, 64-108 bit summation accumulators"}
+      ],
+      "chosen": "B",
+      "underlying_principle_verbatim_ja": "もしDSP数が64bitも108bitも変わらないというのであれば、むしろ108ｂｉｔのほうをとるようにしましょう。",
+      "underlying_principle_translation_en": "If DSP block count is the same whether 64-bit or 108-bit, take 108-bit instead.",
+      "rationale_summary": "Cyclone V's chained-DSP adders implement wide accumulators within a single DSP block; widening from 64 bits to 108 bits costs zero additional DSP. The amplitude multiplier instantiates only twice per module (once per output channel), unlike per-Horner-stage multipliers; doubling its DSP cost is amortized across 2048 bin computations between instances. This principle, named Free Precision Floor, was added to Chapter 2 § 2.4.3 and codified as the chapter's closing epigraph: 'Spend the precision you have for free; constrain only what costs you.'",
+      "candidate_open_prompt_pattern": "Free Precision Floor"
+    },
+    {
+      "id": "DP-6",
+      "point": "Argument range reduction (four-quadrant)",
+      "alternatives": [
+        {"label": "A — Full range x ∈ [0, 2π)", "characterization": "C5G's choice; truncation error at x=2π is (2π)^13/13! ≈ 4e-3"},
+        {"label": "B — Range-reduced x' ∈ [0, π/2)", "characterization": "uses sin's symmetries; truncation error at x'=π/2 is (π/2)^13/13! ≈ 4e-8 — five orders of magnitude smaller"}
+      ],
+      "chosen": "B (four-quadrant decomposition)",
+      "rationale_summary": "The five-orders-of-magnitude error reduction matches the 24-bit DAC quantum (≈ 1.2e-7), placing Maclaurin truncation precisely at the audible-precision floor. Without range reduction, Maclaurin truncation would dominate the error budget; with range reduction, it ceases to be the dominant source. The implementation cost is two pre-pipeline state bits (reflect, result_sign) propagated alongside the data, derivable from the top 2 bits of the phase accumulator. The 2π scaling is absorbed into the formatting of x' (no constant-multiplier DSP block required) — a 'free' optimization in the same family as the Free Precision Floor principle."
+    },
+    {
+      "id": "DP-7",
+      "point": "sin(x) output bit width",
+      "alternatives": [
+        {"label": "A — Q0.27", "characterization": "fits in single 27×27 DSP at amplitude multiplication; compact resource use; loses precision below 2^-26"},
+        {"label": "B — Q0.40 signed (41 bits)", "characterization": "full Maclaurin core internal precision; amplitude multiplier becomes Q0.40 × Q10.14 = Q10.54, requiring multiple DSP blocks per multiply (but only twice per module)"}
+      ],
+      "chosen": "B (Q0.40)",
+      "rationale_summary": "Canonical application of the Free Precision Floor principle. The 13 bits additional precision directly map to better SNR in the final summed output. With 4096 bins summed, low-order bits matter for the total's precision floor. Internal precision must exceed DAC precision to avoid quantization noise floor lift. The amplitude multiplier's increased DSP cost is amortized across 2048 bin computations between instances."
+    },
+    {
+      "id": "DP-8",
+      "point": "Camera-block role and architectural treatment",
+      "alternatives": [
+        {"label": "Direct mapping", "characterization": "camera output → parameter inputs hardcoded"},
+        {"label": "Abstracted via AXI-stream behind input switch", "characterization": "camera output → AXI-stream behind input switch, source-selectable at runtime"},
+        {"label": "Fully external", "characterization": "camera handled by HPS, only AXI traffic enters FPGA fabric — but HPS is out of scope per Chapter 1"}
+      ],
+      "chosen": "AXI-Stream-style input switch with camera as one source among several; Spin-Off-Ready Subsystem treatment",
+      "rationale_summary": "Camera-driven modulation is genuinely interesting in its own right and could become a separate Open Prompt project (real-time video processing on FPGA). The AXI input switch is the structural commitment that allows this: the switch's other inputs (ISSP, future HPS, future external) can take over without the camera block's removal damaging the synthesizer.",
+      "candidate_open_prompt_pattern": "Spin-Off-Ready Subsystem"
+    },
+    {
+      "id": "DP-9",
+      "point": "Required vs Optional input interface partition",
+      "alternatives": [
+        {"label": "A — Camera required", "characterization": "every reference implementation must support OV7670"},
+        {"label": "B — Required-subset (DIP+buttons, ISSP, ISMCE) plus optional extension (camera)", "characterization": "synthesizer fully functional without camera"}
+      ],
+      "chosen": "B",
+      "rationale_summary": "A reader should be able to write the .rbf to a DE10-nano and hear sound without buying or wiring an OV7670. Making camera required would gate the entire deliverable on additional hardware acquisition. Making it optional preserves the path-to-sound minimality (Chapter 1 Intention 1) while inviting the camera experiment for engaged readers."
+    },
+    {
+      "id": "DP-10",
+      "point": "Pipeline depth budget margin",
+      "alternatives": [
+        {"label": "A — Tight budget (~17 clocks reserved)", "characterization": "just enough for Standard configuration's expected retiming"},
+        {"label": "B — Generous budget (30-clock total, 14 clocks reserved beyond the 16-clock implementation)", "characterization": "generous margin for unforeseen retiming, Standard timing pressure, Extended stretch"}
+      ],
+      "chosen": "B (30-clock budget, 14-clock reserve)",
+      "rationale_summary": "The 35-clock-per-bin budget at 100 MHz × 20.833 µs / 2048 bins is generous; reserving margin proportionally is cheap. Pipeline depth is engineering insurance — once exhausted, recovering it requires architectural change. Generous reserve at Layer 1 specification time costs nothing at compile time and protects against unbounded future cost."
+    }
+  ],
+
+  "themes": [
+    {
+      "theme_id": "T1",
+      "title": "Self-application of Open Prompt methodology",
+      "summary": "This drafting dialogue exemplifies what Open Prompt looks like in active practice. The synthesizer's specification is being constructed through dialogue that will itself become Layer 2 of the synthesizer's repository. Future engineers regenerating the WPMS Synthesizer will: (1) read Chapters 1 and 2 to understand what to build; (2) read this trace to understand why each decision was made; (3) if their constraints differ, revisit specific decisions and re-derive a variant; (4) their re-derivation, if recorded, becomes a sibling Layer 2 trace, with original choices preserved as Implementation Arena variants. The recursive structure of Open Prompt repositories extends here: 'the dialogue that drafted the synthesizer becomes the synthesizer's regeneration manual.'"
+    },
+    {
+      "theme_id": "T2",
+      "title": "The C5G optimization gap",
+      "summary": "Three concrete optimizations emerged in this drafting session that were not present in the 5-year-old C5G implementation: (1) argument range reduction (5-orders-of-magnitude error reduction); (2) 32-bit phase accumulator (89× finer resolution); (3) Q0.40 sin output via Free Precision Floor. The architect's response — 'C5G版は使用リソースに対する性能の最適化が詰められていなかった' — is an exemplary statement of how Open Prompt enables design re-examination. The C5G choices were not wrong under their constraints (limited time, exploratory phase, no AI collaborator); they were locally optimal. Re-opening the design space with current methodology revealed global optima that had been masked by the original constraint set."
+    },
+    {
+      "theme_id": "T3",
+      "title": "Two new candidate Open Prompt design patterns",
+      "summary": "Free Precision Floor: where a hardware resource cost is discrete (1 unit or 0 units, not fractional), and where the cost does not increase with internal precision, claim the maximum precision. Spin-Off-Ready Subsystem: when a subsystem could plausibly be developed as an independent project but is being integrated into a larger project for now, structure the integration so that the subsystem can be forked out later without damage. Both candidates should be considered for inclusion in CONTRIBUTING.md alongside Tie Decision Pattern and Polynomial Bin-Sequence Pattern.",
+      "open_prompt_pattern_catalog_after_this_session": [
+        "Tie Decision Pattern (existing)",
+        "Polynomial Bin-Sequence Pattern (candidate from 2026-04-18 trace)",
+        "Free Precision Floor (new candidate)",
+        "Spin-Off-Ready Subsystem (new candidate)"
+      ]
+    },
+    {
+      "theme_id": "T4",
+      "title": "Deferred decisions as a discipline",
+      "summary": "Both Chapter 1 and Chapter 2 contain explicit 'Open Questions Carried Forward' tables. This is a discipline: empirical questions require measurement not deduction; downstream-context questions require later chapters' structure to be settled first; variant-implementation questions belong to alternate paths. The discipline is to record what is not decided with as much clarity as what is decided. A Layer 1 specification that quietly omits open questions misleads future implementers; one that lists them honestly invites collaborative completion."
+    },
+    {
+      "theme_id": "T5",
+      "title": "Hackaday.io engagement signal",
+      "summary": "After Chapters 1 and 2 were posted to Hackaday.io, page views rose from ~30/day to 80-90/day, and follower count doubled (2 → 4). This supports a recordable hypothesis: Open Prompt's value proposition (deep specifications + reasoning traces, not just artifacts) is well-matched to the Hackaday-class engineering audience. Technical density did not deter readers; it attracted them. The methodology's primary distribution channel and its structural form may be co-evolved."
+    }
+  ],
+
+  "resumption_hooks": [
+    {
+      "hook_id": "A",
+      "title": "Chapter 3 (Sequence-Modulation Pipeline Processor)",
+      "description": "The next chapter must specify the difference-engine processor that produces the Q0.32 phase accumulator value (Chapter 2's input contract) for each bin every clock. Five sub-questions are anticipated: (1) bit widths for the nine scalar parameters and N; (2) internal accumulator bit widths for difference recurrences; (3) amplitude A_k computation: linear-domain DSP multiply per bin vs. log-domain accumulation; (4) instruction set for the general-purpose pipeline processor — designed for forward compatibility with fractal synthesis and SDFT modes; (5) parameter ingestion from the AXI input switch.",
+      "starting_question": "What bit width should α use, given that α·k² accumulates over k = 0...N-1 (with N up to 2048), and that the result must remain bounded within the Q0.32 phase accumulator range without losing precision in the small-α regime?"
+    },
+    {
+      "hook_id": "B",
+      "title": "Empirical validation against the 2020 Dirichlet recording",
+      "description": "Chapter 2 § 2.8.3 designates the 2020 Dirichlet kernel waveform as the verification anchor. To make this operational, a measurement protocol is needed: how is 'RMS difference of output PCM against reference recording' computed? What threshold qualifies as 'passing'? How is the 2020 recording itself archived?",
+      "starting_question": "What level of waveform difference (RMS dB, or peak deviation) constitutes a passing match between a regenerated WPMS Synthesizer's KEY[1] output and the 2020 reference, given that the regeneration may use different precision choices, different DSP placement, or different synthesis tools?"
+    },
+    {
+      "hook_id": "C",
+      "title": "Free Precision Floor pattern formalization",
+      "description": "The pattern was named in this dialogue and codified in Chapter 2 § 2.4.3. Adding it to CONTRIBUTING.md alongside Tie Decision Pattern and Polynomial Bin-Sequence Pattern requires a worked example template. The dialogue contains the WPMS-specific instances; formalizing requires extracting the abstract structure.",
+      "starting_question": "Articulate the Free Precision Floor pattern abstractly: when does it apply, when does it not, and what are its failure modes (e.g., taking maximum precision when it requires asymmetric resource costs that compound elsewhere)?"
+    },
+    {
+      "hook_id": "D",
+      "title": "Spin-Off-Ready Subsystem pattern formalization",
+      "description": "Same as Hook C but for the camera block pattern. The pattern encompasses (a) interface boundary discipline, (b) documentation discipline, (c) dependency discipline. Formalizing it in CONTRIBUTING.md will let future Open Prompt projects identify their own spin-off candidates early.",
+      "starting_question": "What is the difference between a Spin-Off-Ready Subsystem and a 'modular component'? The latter is mainstream software-engineering practice; what makes the former specifically Open Prompt?"
+    },
+    {
+      "hook_id": "E",
+      "title": "Module-count breakthrough Layer 2 traces",
+      "description": "Chapter 1 § 1.5 anticipates that each module-count tier (Compact → Standard → Extended) will require its own Layer 2 trace recording the Fmax-threshold breakthrough. These traces do not yet exist; they will emerge as implementation progresses.",
+      "starting_question": "When the first Compact-to-Standard scaling attempt happens, what specific timing-closure failures or routing-congestion symptoms should be looked for as the 'tell' that an Fmax threshold has been hit? What is the recommended diagnostic flow?"
+    }
+  ],
+
+  "key_outputs_for_repository": [
+    "WPMS_Layer1_Chapter1_Scope_and_Boundary_Conditions.md (10 fixed decisions, 1 tie, comprehensive scope statement)",
+    "WPMS_Layer1_Chapter2_Maclaurin_Pipeline.md (15 fixed decisions, full pipeline architecture, error budget, 7 Implementation Arena items, 6 Open Questions)",
+    "Codification of two new candidate Open Prompt design patterns: Free Precision Floor and Spin-Off-Ready Subsystem",
+    "First worked example of partial-tie-resolution methodology (Approach A vs B Horner choice for WPMS-specific context)",
+    "Three demonstrated optimizations beyond the C5G prototype (range reduction, 32-bit phase, Q0.40 sin output)"
+  ],
+
+  "closing_note": "Code is ephemeral; the knowledge architecture is the commons.\n\nSpec is what; trace is why; together they regenerate.\n\nコードは一時的なものであり、知識アーキテクチャこそが共有財産である。\n\n仕様は何を、軌跡はなぜを、そして合わさって再生成する。\n\nThis trace is released into the public domain under CC0 1.0 Universal. Replay it. Resume it. Surpass it.\n\n本軌跡はCC0 1.0 Universalのもとパブリックドメインに公開される。再生せよ。再開せよ。超えてゆけ。"
+}
