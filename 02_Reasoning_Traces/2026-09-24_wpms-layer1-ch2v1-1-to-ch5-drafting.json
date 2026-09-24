@@ -1,0 +1,724 @@
+{
+  "metadata": {
+    "title": "WPMS Layer 1 Drafting — Chapter 2 v1.1 through Chapter 5, and the Customer–Profile Boundary with PTSG-WPMS-Formation",
+    "title_ja": "WPMS 第1層起草 — 第2章 v1.1 〜 第5章、および PTSG-WPMS-Formation との顧客–プロファイル境界",
+    "date_range": "2026-09-04 to 2026-09-24 (prelude 2026-05, summarized)",
+    "participants": [
+      {
+        "name": "Tsuneo Ohnaka",
+        "name_ja": "大中庸生",
+        "role": "FPGA architect (40+ years); orchestrator and ruling authority"
+      },
+      {
+        "name": "Claude",
+        "provider": "Anthropic",
+        "role": "WPMS amanuensis — customer side",
+        "model_record": {
+          "2026-09-23": "Claude Opus 5.5",
+          "2026-09-24": "Claude Opus 5.5",
+          "earlier turns (2026-05, 2026-09-04)": "not recorded in the thread; may differ"
+        }
+      },
+      {
+        "name": "PTSG-WPMS-Formation amanuensis",
+        "provider": "Anthropic (separate Claude session)",
+        "role": "owner of the L2 profile; messages relayed by the architect",
+        "model_record": "not recorded here"
+      }
+    ],
+    "direct_outputs": [
+      "WPMS_Layer1_Chapter2_Maclaurin_Pipeline_v1_1.md",
+      "WPMS_Layer1_Chapter3_L1_Engine_and_L2_Binding.md",
+      "WPMS_Layer1_Chapter4_Output_Path.md",
+      "WPMS_Layer1_Chapter5_Boundary_and_Address_Map.md",
+      "wpms_layer1_oracle.py (proposed path 04_Verification/oracle/)"
+    ],
+    "related_repositories": {
+      "FPGA_Spectrum_Engine_OpenPrompt": "this repository (WPMS Layer 1)",
+      "PTSG-WPMS-Formation": "L2 profile: L2 Formation Register Map v0.2, Decision Register W v0.5"
+    },
+    "license": "CC0 1.0 Universal (Public Domain)",
+    "format_version": "1.0",
+    "intended_readers": [
+      "PTSG-WPMS-Formation amanuensis (full review of Layer 1 Ch.1–5)",
+      "Claude Code or any context-isolated agent generating HDL, testbenches or tools"
+    ],
+    "reading_order": [
+      "precedence_rule",
+      "ruling_state",
+      "supersession_history",
+      "naming_map",
+      "decision_points",
+      "evidence"
+    ]
+  },
+  "precedence_rule": [
+    "Layer 1 chapters state the customer's requirements; the L2 register map states what the profile currently implements. Neither silently overrides the other; a difference is a pending ruling.",
+    "Within Layer 1 the later version supersedes the earlier (Ch.2 v1.1 > v1.0). Chapter 5 Appendix 5.A is the consolidated state as of 2026-09-24.",
+    "The architect's rulings resolve differences. Until ruled, a code-generating agent implements the Layer 1 requirement AND flags the difference; it never picks one side silently."
+  ],
+  "prelude_2026_05": {
+    "summary": "The architect presented PTSG (four opcodes; Stay separating time from state; shadow execution; 16 timing signals; 1-bit external Condition). Approach 1 (fixed pipeline, Stay-counted) chosen for WPMS; Approach 2 kept as a trailer. The architect introduced the period layers L1 bin / L2 packet (new) / L3 sample / L4 control and the governing question 'at which layer should each coefficient be computed?', placing the Gaussian's exp() initial values at L4 and A_{k+1}=A_k·M_k, M_{k+1}=M_k·C at L1. Upper/Lower PTSG proposed by Claude and accepted (same IP, two instances). PTSG spun off as its own Open Prompt repository and Hackaday.io project; this session became a PTSG user; customer requirements R1–R7, W1–W2 written.",
+    "context": [
+      "2026-05-06 Hackaday.com feature 'Taking Polyphony To A New Level' (Jenny List): 'an SDR for the world of acoustics'",
+      "2026-05-30 Build Log 'The Despair of a 300-Meter-Long Hammond Organ' presented the four-layer architecture publicly"
+    ]
+  },
+  "turns": [
+    {
+      "date": "2026-09-04",
+      "speaker": "Ohnaka",
+      "content_summary_en": "Returns: PTSG-Core in on-board debug on DE10-nano; path Core → CPU-Formation → PTSG-WPMS-Formation, which becomes the L2 Formation; the upper layer to be reconsidered later. Relays the profile amanuensis's three points."
+    },
+    {
+      "date": "2026-09-04",
+      "speaker": "PTSG-WPMS-Formation amanuensis (relayed)",
+      "content_summary_en": "(1) Unified correction of Ch.2 § 2.5: 2,083 clocks vs 2,048 bins per module per sample; the 35-clock difference is pipeline-overhead margin, not a per-bin budget; ~17 is pipeline depth, a different quantity. (2) The f → φ mapping belongs to no one. (3) It will supply the ISA-visible register map; Q and wiring belong to Ch.3; R2(b) solved by 32-bit integer ports."
+    },
+    {
+      "date": "2026-09-04",
+      "speaker": "Claude",
+      "content_summary_en": "Accepts the correction; lists owners A (L4), B (L2 page), C (host) for f → φ, leaning A; accepts the integer-width / Q split as a clean Open Prompt boundary."
+    },
+    {
+      "date": "2026-09-04",
+      "speaker": "PTSG-WPMS-Formation amanuensis (relayed)",
+      "content_summary_en": "1/48000 is a constant: the mapping is one MAC by a reciprocal in any layer, so cost does not decide; the deciding factor is who knows Fs and at which period f changes. The page will carry phase-domain 32-bit integers (Δφ₀, Δ²φ, Δ³φ), valid under A or C."
+    },
+    {
+      "date": "2026-09-04",
+      "speaker": "Ohnaka",
+      "content_summary_en": "Rules L4-Formation outside WPMS, realized first as a verification tool in a new Open Prompt Layer 4 (verification), to be grown toward a MIDI interpreter; keeps L4's many functions from delaying WPMS. Delivers Deliverable 1 (register map v0.1)."
+    },
+    {
+      "date": "2026-09-04",
+      "speaker": "Claude",
+      "content_summary_en": "Customer review of Deliverable 1: Q column (PH*/OM* Q0.32 modular; A0 Q1.31; AR1/AR2/E0 Q4.28, SHV 28), RT.OUT numbering, slot set complete (third order not needed), Mode T supported, Ch.2 errata; notes that phase is exact with zero drift and L1 never reads OM*. Recorded by the profile as the '09-07 answers'."
+    },
+    {
+      "date": "2026-09-23",
+      "speaker": "Ohnaka",
+      "content_summary_en": "Publishes the PTSG-WPMS-Formation repository; ratifies the Q proposals (W-R10); asks for Ch.2 v1.1 first; asks whether Deliverables 2 and 3 are in the repository."
+    },
+    {
+      "date": "2026-09-23",
+      "speaker": "Claude",
+      "content_summary_en": "Reviews the repository (register map v0.2, Decision Register W v0.5): Deliverables 2–3 not yet issued. Issues Ch.2 v1.1 (two errata; vocabulary L1/L2/L4)."
+    },
+    {
+      "date": "2026-09-23",
+      "speaker": "Ohnaka",
+      "content_summary_en": "Asks for the full Chapter 3, stating undecided points top-down as customer requirements; he and the profile will work to realize them."
+    },
+    {
+      "date": "2026-09-23",
+      "speaker": "Claude",
+      "content_summary_en": "Drafts Ch.3: period layers and placement principle; exact phase path; amplitude moved to log₂ (retracting its own ratified proposal, with evidence); exp2 unit; sweep timing budget (7-clock slack); CR3-xx; test-origin integers."
+    },
+    {
+      "date": "2026-09-24",
+      "speaker": "Ohnaka",
+      "content_summary_en": "Rules C3-D1 Fixed. Defers the amplitude domain and the relay of requirements until Ch.4 (expected to be closely related). The profile amanuensis will read all of Layer 1 after Ch.5 and, except where truly infeasible, work with the architect to realize the customer's intent."
+    },
+    {
+      "date": "2026-09-24",
+      "speaker": "Claude",
+      "content_summary_en": "Drafts Ch.4 (output path): log-domain amplitude meets no obstacle and helps (master gain = one adder, constant-dB fades, soft mute; sign lives in the phase). Crest factor: Dirichlet 36.1 dB vs Schroeder ψ = π/N 5.6 dB. Audio domain masters L3. MiSTer as prior art. Latency defined."
+    },
+    {
+      "date": "2026-09-24",
+      "speaker": "Ohnaka",
+      "content_summary_en": "Approves 'regenerate from documents and this chapter' for the MiSTer boundary as ideal; approves the latency disclosure and will use it in publication; asks for Ch.5."
+    },
+    {
+      "date": "2026-09-24",
+      "speaker": "Claude",
+      "content_summary_en": "Drafts Ch.5: stage–arm–go; continuity law; level glide (CR5-L1, LPT at +0x9); phase-shape velocity ≡ frequency shape; four-port input switch with ownership; address map; JTAG MM master; ROM port for the test origin; camera mapper contract; Appendix 5.A for the full review."
+    },
+    {
+      "date": "2026-09-24",
+      "speaker": "Ohnaka",
+      "content_summary_en": "Asks what a Layer 2 trace should record to help the profile amanuensis and Claude Code; then asks for this trace and a consolidated oracle."
+    },
+    {
+      "date": "2026-09-24",
+      "speaker": "Claude",
+      "content_summary_en": "Builds the oracle (18 checks, all PASS, ~3 s); while consolidating, finds and records two measurement pitfalls and the consistent-derivation guideline; writes this trace."
+    }
+  ],
+  "ruling_state": [
+    {
+      "item": "L4 outside WPMS; verification tool (Open Prompt Layer 4)",
+      "state": "ruled",
+      "date": "2026-09-04"
+    },
+    {
+      "item": "W-R10 phase part: PH*/OM* Q0.32 modular; RT.OUT bit0 L, bit1 R",
+      "state": "ruled, stands",
+      "date": "2026-09-23"
+    },
+    {
+      "item": "W-R10 amplitude part: A0 Q1.31; AR1/AR2/E0 Q4.28; SHV 28",
+      "state": "ruled 2026-09-23, superseded by the Ch.3 proposal; re-ruling pending"
+    },
+    {
+      "item": "Ch.2 v1.1 first (W-R11)",
+      "state": "ruled; issued",
+      "date": "2026-09-23"
+    },
+    {
+      "item": "C3-D1: only phase- and log-domain integers cross the boundary",
+      "state": "ruled Fixed",
+      "date": "2026-09-24"
+    },
+    {
+      "item": "C3-D4 / CR3-A1: log₂ amplitude",
+      "state": "pending — full review"
+    },
+    {
+      "item": "Relay of CR3-xx and CR5-xx",
+      "state": "pending — full review (Ch.5 Appendix 5.A)"
+    },
+    {
+      "item": "C4-D11: MiSTer as prior art; regenerate",
+      "state": "ruled",
+      "date": "2026-09-24"
+    },
+    {
+      "item": "C4-D10: latency intervals; sink reported separately",
+      "state": "ruled (for publication too)",
+      "date": "2026-09-24"
+    },
+    {
+      "item": "CR5-L1: level glide, LPT at +0x9",
+      "state": "pending — profile feasibility (clamp, N_min)"
+    },
+    {
+      "item": "other C3-D*, C4-D*, C5-D*",
+      "state": "drafted within chapter scope; subject to the full review"
+    }
+  ],
+  "supersession_history": [
+    {
+      "was": "linear amplitude A0 Q1.31, AR1/AR2/E0 Q4.28 (proposed 09-04, ratified 09-23)",
+      "became": "log₂ amplitude LP, LAD1, LAD2, LE0, LS0 (+0xF)",
+      "where": "Ch.3 § 3.5",
+      "why": "underflow (σ = 71 silent), loop-carried multiply, k² truncation bias"
+    },
+    {
+      "was": "LP ← LP + LE0 (free slope)",
+      "became": "LP steps toward LPT (+0x9) at rate LE0 ≥ 0",
+      "where": "Ch.5 § 5.3.2, CR5-L1",
+      "why": "continuity without [S] writes; cannot run away"
+    },
+    {
+      "was": "CR3-C2 two update classes",
+      "became": "CR5-I1 per-slot mask",
+      "where": "Ch.5 § 5.10",
+      "why": "level, phase and frequency are independent concerns"
+    },
+    {
+      "was": "CR3-C3 test origin inside the profile",
+      "became": "CR5-R1 empty sweeps after reset; ROM port loads test origin",
+      "where": "Ch.5 § 5.8",
+      "why": "no special logic in the profile"
+    },
+    {
+      "was": "MiSTer HDMI core as starting code (Ch.1 § 1.3)",
+      "became": "prior art only; regenerate",
+      "where": "Ch.4 § 4.2.1",
+      "why": "GPL vs MIT Layer 3"
+    },
+    {
+      "was": "ISSP as parameter write path (Ch.1 § 1.8)",
+      "became": "JTAG memory-mapped master; ISSP for probes and knobs",
+      "where": "Ch.5 § 5.7",
+      "why": "hundreds of slots need addressable writes"
+    },
+    {
+      "was": "AXI-Stream-style input switch (Ch.1 § 1.9)",
+      "became": "four-port memory-mapped switch with ownership",
+      "where": "Ch.5 § 5.5",
+      "why": "several sources play at once"
+    },
+    {
+      "was": "camera drives δφ, ψ as positions",
+      "became": "camera drives velocities via OMD1/OMD2; no [S] writes",
+      "where": "Ch.5 § 5.9",
+      "why": "δφ̇ ≡ 2πΔf, ψ̇ ≡ 2πα"
+    },
+    {
+      "was": "Ch.2 § 2.5 '35-clock per-bin budget', '~17 cycles'",
+      "became": "2,083 clocks vs 2,048 bins; 35-clock margin; 16-clock depth is latency",
+      "where": "Ch.2 v1.1",
+      "why": "profile amanuensis's correction"
+    },
+    {
+      "was": "Ch.2 amplitude Q10.14",
+      "became": "Q1.31",
+      "where": "Ch.2 v1.1",
+      "why": "C5G artifact; Free Precision Floor"
+    },
+    {
+      "was": "Upper / Lower PTSG",
+      "became": "L1 pipeline / L2 Formation / L4 Formation (outside WPMS)",
+      "where": "Ch.3 § 3.1",
+      "why": "ecosystem vocabulary; 09-04 ruling"
+    }
+  ],
+  "decision_points": [
+    {
+      "id": "DP-1",
+      "point": "owner of the f → φ mapping",
+      "alternatives": [
+        "A: L4",
+        "B: L2 page",
+        "C: host"
+      ],
+      "chosen": "only phase/log integers cross the WPMS boundary; L4 converts (C3-D1)",
+      "rationale": "the profile's insight: cost is one reciprocal MAC anywhere; decisive is who knows Fs and when f changes",
+      "state": "ruled Fixed 2026-09-24"
+    },
+    {
+      "id": "DP-2",
+      "point": "place of L4",
+      "alternatives": [
+        "inside WPMS (Upper PTSG)",
+        "outside WPMS"
+      ],
+      "chosen": "outside, first as a verification tool",
+      "rationale": "L4's functions are many; keep the earliest-sound path short",
+      "state": "ruled 2026-09-04"
+    },
+    {
+      "id": "DP-3",
+      "point": "amplitude representation",
+      "alternatives": [
+        "linear geometric recurrence (ratified W-R10)",
+        "log₂ with level + shape split"
+      ],
+      "chosen": "log₂",
+      "rationale": "γ = 1e-4 (σ = 71 bins) gives a₀ ≈ 2.9e-46 → Q1.31 0 → silent packet; loop-carried multiply at one bin per clock; 0.58 % truncation bias even when representable. In log₂ the recurrence is exact integer addition (products become sums).",
+      "evidence": [
+        "CH3-UNDERFLOW",
+        "CH3-LINBIAS",
+        "CH3-LOGEXACT",
+        "CH3-E2E"
+      ],
+      "state": "pending — full review",
+      "note": "retracts the customer's own ratified proposal"
+    },
+    {
+      "id": "DP-4",
+      "point": "log-domain slot formats",
+      "alternatives": [
+        "one common format",
+        "per-slot formats aligned internally"
+      ],
+      "chosen": "LP, LE0, LPT Q6.26; LAD1 Q8.24; LAD2 Q2.30; LS0 Q12.20; internal shape accumulators 54-bit Q23.30",
+      "rationale": "range where needed (LS0), resolution where needed (LAD2, slow decays); alignment shifts are wiring",
+      "evidence": [
+        "CH3-QFMT",
+        "CH3-LOGEXACT"
+      ]
+    },
+    {
+      "id": "DP-5",
+      "point": "block selection",
+      "alternatives": [
+        "Mode W (window, ≈75 clocks/packet)",
+        "Mode T (table-direct, ≈25 clocks/packet)"
+      ],
+      "chosen": "Mode T",
+      "rationale": "three times cheaper; N_min ≈ 32 (profile recommendation, customer concurs)"
+    },
+    {
+      "id": "DP-6",
+      "point": "closing a sample",
+      "alternatives": [
+        "sweep-end token",
+        "synchronized strobe"
+      ],
+      "chosen": "synchronized strobe",
+      "rationale": "no extra lane; empty sweeps close at zero"
+    },
+    {
+      "id": "DP-7",
+      "point": "packet boundary gap g",
+      "alternatives": [
+        "tolerate g > 0",
+        "require g = 0"
+      ],
+      "chosen": "require g = 0 (CR3-T1)",
+      "rationale": "full-load slack is 7 clocks; g = 1 at P = 8 consumes it",
+      "evidence": [
+        "CH3-BUDGET"
+      ]
+    },
+    {
+      "id": "DP-8",
+      "point": "master of the L3 period",
+      "alternatives": [
+        "divide clk_sys",
+        "audio domain"
+      ],
+      "chosen": "audio domain; strobe S_m = F_m − 1 SCLK; stability-window handoff",
+      "rationale": "100 MHz / 48 kHz is not an integer; compute latency of one period reaches the wire in 1.031 periods",
+      "evidence": [
+        "CH4-LATENCY"
+      ]
+    },
+    {
+      "id": "DP-9",
+      "point": "master gain",
+      "alternatives": [
+        "linear multiplier",
+        "log₂ adder"
+      ],
+      "chosen": "MG in log₂, one adder, target + slew; DIP[3] soft mute",
+      "rationale": "exact, no DSP, constant-dB/s fades",
+      "evidence": [
+        "CH4-MG"
+      ]
+    },
+    {
+      "id": "DP-10",
+      "point": "MiSTer HDMI-side blocks",
+      "alternatives": [
+        "copy",
+        "regenerate"
+      ],
+      "chosen": "regenerate from ADV7513 documentation + Ch.4",
+      "rationale": "GPL vs MIT Layer 3; small blocks; itself an Open Prompt demonstration",
+      "state": "ruled 2026-09-24"
+    },
+    {
+      "id": "DP-11",
+      "point": "latency claim",
+      "alternatives": [
+        "'1 sample' unqualified",
+        "defined intervals"
+      ],
+      "chosen": "compute 1 period; wire 1.031 periods; sink reported separately",
+      "state": "ruled 2026-09-24"
+    },
+    {
+      "id": "DP-12",
+      "point": "update granularity",
+      "alternatives": [
+        "two classes (retune/re-seed)",
+        "per-slot mask"
+      ],
+      "chosen": "16-bit slot mask + RT.OUT bit (CR5-I1)",
+      "rationale": "level, phase and frequency are independent concerns"
+    },
+    {
+      "id": "DP-13",
+      "point": "level continuity",
+      "alternatives": [
+        "writer-side slope with readback",
+        "Formation-side target glide"
+      ],
+      "chosen": "Formation glide: LP → LPT at rate LE0 (CR5-L1)",
+      "rationale": "a missed update parks the level at its target instead of letting it run away",
+      "evidence": [
+        "CH5-GLIDE"
+      ],
+      "state": "pending — profile feasibility"
+    },
+    {
+      "id": "DP-14",
+      "point": "host write path",
+      "alternatives": [
+        "ISSP",
+        "JTAG memory-mapped master"
+      ],
+      "chosen": "JTAG MM master (vendor JTAG-to-Avalon bridge, instantiated not copied); ISSP for probes and knobs"
+    },
+    {
+      "id": "DP-15",
+      "point": "test origin",
+      "alternatives": [
+        "logic inside the profile",
+        "ROM port of the input switch"
+      ],
+      "chosen": "ROM port 3, ISMCE-editable; reconfiguration restores the test origin",
+      "rationale": "no special logic in the profile; the regression anchor survives power cycles"
+    },
+    {
+      "id": "DP-16",
+      "point": "input switch",
+      "alternatives": [
+        "single selectable source",
+        "multi-port with ownership"
+      ],
+      "chosen": "four ports (host, camera, HPS reserved, ROM), ownership per block and sweep word, REJECT counters"
+    },
+    {
+      "id": "DP-17",
+      "point": "camera template",
+      "alternatives": [
+        "positions δφ, ψ ([S] writes)",
+        "velocities via [P]"
+      ],
+      "chosen": "velocities; the camera never writes [S]",
+      "rationale": "moving the phase shape equals shaping the frequencies",
+      "evidence": [
+        "CH5-VELOCITY"
+      ]
+    }
+  ],
+  "naming_map": [
+    {
+      "was": "A0 (+0x2)",
+      "is": "LP",
+      "note": "Q6.26 log₂ level, [S]"
+    },
+    {
+      "was": "AR1 (+0x3)",
+      "is": "LAD1",
+      "note": "Q8.24 first difference of shape"
+    },
+    {
+      "was": "AR2 (+0x4)",
+      "is": "LAD2",
+      "note": "Q2.30 second difference"
+    },
+    {
+      "was": "E0 (+0x5)",
+      "is": "LE0",
+      "note": "Ch.3 slope → Ch.5 rate ≥ 0 (CR5-L1)"
+    },
+    {
+      "was": "reserved (+0x9)",
+      "is": "LPT",
+      "note": "Q6.26 level target (CR5-L1)"
+    },
+    {
+      "was": "reserved (+0xF)",
+      "is": "LS0",
+      "note": "Q12.20 shape offset at k = 0 (CR3-A1)"
+    },
+    {
+      "was": "Upper PTSG",
+      "is": "L4 Formation",
+      "note": "outside WPMS"
+    },
+    {
+      "was": "Lower PTSG",
+      "is": "L2 Formation",
+      "note": "= PTSG-WPMS-Formation"
+    },
+    {
+      "was": "sequence-modulation pipeline processor (Ch.1 § 1.7)",
+      "is": "L1 difference engine + L2 Formation"
+    },
+    {
+      "was": "phase accumulator φ_k (Ch.2)",
+      "is": "evaluated phase Φ_k(n)",
+      "note": "no per-bin state"
+    },
+    {
+      "was": "AXI-Stream-style input switch (Ch.1 § 1.9)",
+      "is": "four-port input switch (Ch.5 § 5.5)"
+    }
+  ],
+  "symbols": {
+    "S_m": "L3 strobe",
+    "F_m": "I2S frame boundary",
+    "Delta_pre": "1 SCLK = 325.5 ns",
+    "T_min": 2083,
+    "g": "idle clocks per packet boundary",
+    "T_wake": "strobe → first K = 0",
+    "D_L1": "L1 latency, target ≤ 24",
+    "MG": "master gain, log₂",
+    "G": "coarse output gain (DIP / ISSP)",
+    "N_p, P": "packet length, packets per sweep"
+  },
+  "evidence": {
+    "oracle": "wpms_layer1_oracle.py",
+    "class": "ORACLE (host arithmetic, not silicon)",
+    "result": "18 checks, all PASS, about 3 s; a deliberately wrong expectation yields FAIL and exit status 1",
+    "reference_models": [
+      "exp2_q131",
+      "l1_amplitude",
+      "l1_phase",
+      "step_toward",
+      "gaussian_slots"
+    ],
+    "checks": {
+      "CH2-CLOCK": "2,083 / 35 / 19",
+      "CH2-WIDTH": "Q1.71 → Q1.63; Q12.63 / Q13.63 / Q15.63",
+      "CH3-ORIGIN": "OM0 89,120,571; OMD1 350; LP −2,948,988; 255.653 s",
+      "CH3-UNDERFLOW": "σ = 71 and σ = 22 silent in the linear domain",
+      "CH3-LINBIAS": "0.581 % at k = 1,855",
+      "CH3-LOGEXACT": "0 mismatches; 54-bit bound",
+      "CH3-PHASE": "0 mismatches, n ≤ 10⁶",
+      "CH3-EXP2": "11.68 LSB; 2^-24.0 relative (a ≥ 2^-7); one M10K",
+      "CH3-E2E": "σ = 71 plays: 927 audible bins; exp2-only 2^-24.2; slot quantization 2^-12.3 naive, 2^-15.1 consistent",
+      "CH3-BUDGET": "slack 7 (g = 0), 0 (g = 1); legal loads for g = 0…3",
+      "CH3-QFMT": "slot resolutions and ranges",
+      "CH4-CREST": "36.12 / 5.60 / 12.17 dB; levels at G = 12 and G = 8",
+      "CH4-MG": "13,933; 1.000 s fade",
+      "CH4-LATENCY": "21.484 µs = 1.031 periods",
+      "CH5-VELOCITY": "5.8e-11 rad",
+      "CH5-GLIDE": "exact arrival, no overshoot",
+      "CH5-MASK": "0x9E3B, 0x9FFF, 0x0220, 0x1C00, 0x01C0",
+      "CH5-MAP": "0x3FF (M = 2), 0xBFF (M = 10)"
+    },
+    "measurement_pitfalls": [
+      "Relative error near the format floor: over outputs down to 2^-23 the exp2 error reads 2^-8 — that is the Q1.31 LSB. Measure relative error where the format has the bits (a ≥ 2^-7); absolute error in LSBs everywhere.",
+      "An apex on the clamp: a Gaussian with A0 = 1 sits on the per-bin clamp (a ≤ 1); rounding pushes it over and the clamp reads as 2^-15.7 error. Test at A0 < 1.",
+      "Realized vs requested parameters: integers quantize parameters (1/256 Hz → 350, not 349.53). Silicon plays the realized integers; bit-level regression compares against them."
+    ],
+    "guideline_for_L4_tool": "Consistent derivation: round the highest-order slot first (LAD2) and derive LAD1 and LS0 from the rounded value, keeping the apex at N/2 and level A0. Deviation from the requested Gaussian falls from 2^-12.3 to 2^-15.1 at no cost."
+  },
+  "acceptance_conditions": [
+    {
+      "id": "AC-1",
+      "condition": "phase of every bin equals the closed form Φ_k(n) exactly",
+      "oracle": "CH3-PHASE"
+    },
+    {
+      "id": "AC-2",
+      "condition": "log-amplitude equals its closed form exactly; 54-bit accumulators never wrap",
+      "oracle": "CH3-LOGEXACT"
+    },
+    {
+      "id": "AC-3",
+      "condition": "exp2 ≤ 12 LSB absolute; ≤ 2^-24 relative for a ≥ 2^-7; test with A0 < 1",
+      "oracle": "CH3-EXP2, CH3-E2E"
+    },
+    {
+      "id": "AC-4",
+      "condition": "SWEEP_CLOCKS_MAX ≤ 2,083; STROBE_INTERVAL ∈ {2,083, 2,084}",
+      "oracle": "CH3-BUDGET"
+    },
+    {
+      "id": "AC-5",
+      "condition": "an armed item is applied exactly once, whole, on the same sample in every module; APPLIED_SAMPLE reports it; frozen writes are rejected and counted",
+      "oracle": "HDL test (Ch.5 § 5.4)"
+    },
+    {
+      "id": "AC-6",
+      "condition": "a commit whose mask holds only [P] slots produces no phase or level discontinuity",
+      "oracle": "CH5-VELOCITY; HDL test"
+    },
+    {
+      "id": "AC-7",
+      "condition": "level glide: steps ≤ rate, no overshoot, exact arrival; LE0 = 0 freezes",
+      "oracle": "CH5-GLIDE"
+    },
+    {
+      "id": "AC-8",
+      "condition": "test-origin integers; peak −6.3 dBFS at G = 12",
+      "oracle": "CH3-ORIGIN"
+    },
+    {
+      "id": "AC-9",
+      "condition": "saturation never wraps; clip flags are sticky",
+      "oracle": "HDL test (Ch.4 § 4.4.2)"
+    }
+  ],
+  "design_pattern_candidates": [
+    {
+      "name": "Period-Layer Placement",
+      "statement": "compute each quantity in the slowest period layer at which it changes",
+      "origin": "architect, 2026-05"
+    },
+    {
+      "name": "Adders in the Loop",
+      "statement": "one-clock loops carry additions only; curvature is applied once, feed-forward",
+      "origin": "Ch.3 § 3.2.2"
+    },
+    {
+      "name": "Products Become Sums",
+      "statement": "a multiplicative recurrence in log coordinates loses its underflow, its loop multiply and its bias, and every levelizer on it becomes linear",
+      "origin": "Ch.3 § 3.5, Ch.4 § 4.4.1, Ch.5 § 5.3.2"
+    },
+    {
+      "name": "Stage–Arm–Go",
+      "statement": "writers stage, arm with a mask, and fire; changes land whole on one sample everywhere",
+      "origin": "Ch.5 § 5.4"
+    },
+    {
+      "name": "Continuity Law",
+      "statement": "write the constants, let the state flow; to move the phase shape, move the frequencies",
+      "origin": "Ch.5 § 5.3"
+    },
+    {
+      "name": "Regenerate, Don't Copy",
+      "statement": "resolve a license boundary by regenerating small blocks from primary documents and the spec",
+      "origin": "Ch.4 § 4.2.1"
+    },
+    {
+      "name": "Evidence-Driven Retraction",
+      "statement": "a ratified proposal is withdrawn, with its evidence, when drafting exposes a hardware fact; the retraction is recorded, not hidden",
+      "origin": "Ch.3 § 3.5.6"
+    }
+  ],
+  "themes": [
+    {
+      "id": "T1",
+      "title": "Open Prompt across repositories, in practice",
+      "summary": "requirements carry IDs; messages are relayed; correction runs both ways — the profile corrected the customer's numbers (Ch.2), the customer retracted its own ratified proposal (Ch.3)"
+    },
+    {
+      "id": "T2",
+      "title": "Exactness as architecture",
+      "summary": "phase and log-amplitude are integers end to end; the 2020 First Sound coherence becomes a theorem"
+    },
+    {
+      "id": "T3",
+      "title": "Log coordinates keep paying",
+      "summary": "no underflow; master gain as one adder; constant-dB fades; soft mute; level glide; dB-linear camera control"
+    },
+    {
+      "id": "T4",
+      "title": "Phase as a hidden instrument",
+      "summary": "ψ = π/N (Schroeder, 1970) cuts crest factor from 36.1 to 5.6 dB; sign lives in the phase; moving the phase shape is shaping the frequencies"
+    },
+    {
+      "id": "T5",
+      "title": "Honest boundaries",
+      "summary": "oracle is not silicon; board facts to confirm; MiSTer consulted not copied; latency defined interval by interval; measurement pitfalls recorded"
+    }
+  ],
+  "resumption_hooks": [
+    {
+      "hook_id": "A",
+      "title": "full review by the profile amanuensis",
+      "starting_question": "Which customer requirements of Appendix 5.A are infeasible or costly in the L2 profile — especially CR5-L1's clamp (and its effect on N_min) and CR3-B1's zero-gap seven-word bundle — and what counter-proposals preserve their intent?"
+    },
+    {
+      "hook_id": "B",
+      "title": "packet-boundary gap on PTSG-Core",
+      "starting_question": "When a Stay times out and the next state is a Stay Set, does the Core spend an idle clock? If so, can the next Stay's first count be presented on the following clock (g = 0, CR3-T1)?"
+    },
+    {
+      "hook_id": "C",
+      "title": "bit-accurate golden model of one sweep",
+      "starting_question": "Extend the oracle with Ch.2's Maclaurin formats, the Q1.63 product, the accumulators and the output stage; publish the test origin's first 48,000 PCM samples as the tier-(i) regression reference."
+    },
+    {
+      "hook_id": "D",
+      "title": "Layer 4 verification tool",
+      "starting_question": "Build the host tool: Hz/dB → integers with consistent derivation, the mask presets of Appendix 5.B, stage–arm–go over System Console; measure JTAG round-trip time and write throughput."
+    },
+    {
+      "hook_id": "E",
+      "title": "v1.1 of Chapters 1 and 3",
+      "starting_question": "After the rulings, apply Appendix 5.A.3 to Ch.1 and Ch.3; which items change once the profile's answers to hook A are known?"
+    },
+    {
+      "hook_id": "F",
+      "title": "optional camera chapter",
+      "starting_question": "Specify the frame aggregator and the mapping-table encoding, and find a first playable mapping that respects the continuity law."
+    }
+  ],
+  "errata_in_earlier_traces": [
+    "Name: the JSON of 2026-04-28_project-launch-dialogue and of 2026-05-02_wpms-layer1-chapters-1-and-2-drafting give the Japanese name as 大中恒夫; the correct form is 大中庸生 (as in 02_Reasoning_Traces/README.md).",
+    "Model names in earlier traces were written by the model itself (flagged by ClaudeCode on 2026-04-29). This trace records models per date and marks the unknown as unknown; the maintainer may verify earlier entries."
+  ],
+  "closing_note": "Code is ephemeral; the knowledge architecture is the commons.\n\nA retraction with its evidence is worth more than a decision without one.\n\nコードは一時的なものであり、知識アーキテクチャこそが共有財産である。\n\n根拠を添えた撤回は、根拠のない決定より価値がある。\n\nThis trace is released into the public domain under CC0 1.0 Universal. Replay it. Resume it. Surpass it."
+}
